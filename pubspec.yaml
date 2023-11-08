@@ -1,0 +1,8 @@
+name: github_activity
+description: Github activity tracker for mobile.
+environment:
+  sdk: '^3.1.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^0.13.3
