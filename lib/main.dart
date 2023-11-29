@@ -22,6 +22,7 @@ class GitHubActivityScreen extends StatefulWidget {
 class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
   final GitHubService _gitHubService = GitHubService();
   late List<GitHubActivity> _activities;
+  Map<String, dynamic>? _userData;
   TextEditingController _usernameController = TextEditingController();
 
   @override
@@ -35,8 +36,10 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
     if (username.isNotEmpty) {
       try {
         final activities = await _gitHubService.getGitHubActivity(username);
+        final userData = await _gitHubService.getGitHubUser(username);
         setState(() {
           _activities = activities;
+          _userData = userData;
         });
       } catch (e) {
         print('Error: $e');
@@ -56,14 +59,30 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(labelText: 'GitHub Username'),
+            child: Column(
+              children: [
+                if (_userData != null)
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: NetworkImage(_userData!['avatar_url']),
+                  ),
+                SizedBox(height: 10),
+                if (_userData != null)
+                  Text(
+                    _userData!['name'] ?? _userData!['login'],
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(labelText: 'GitHub Username'),
+                ),
+                ElevatedButton(
+                  onPressed: _loadGitHubActivity,
+                  child: Text('Fetch GitHub Activity'),
+                ),
+              ],
             ),
-          ),
-          ElevatedButton(
-            onPressed: _loadGitHubActivity,
-            child: Text('Fetch GitHub Activity'),
           ),
           Expanded(
             child: _activities.isEmpty

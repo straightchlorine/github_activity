@@ -15,4 +15,14 @@ class GitHubService {
       throw Exception('Failed to fetch GitHub activity');
     }
   }
+
+  Future<Map<String, dynamic>> getGitHubUser(String username) async {
+    final response = await http.get(Uri.parse('$_baseUrl/users/$username'));
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to fetch GitHub user');
+    }
+  }
 }
