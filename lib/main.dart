@@ -106,6 +106,34 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
           ),
         ],
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+        DrawerHeader(
+          decoration: const BoxDecoration(
+            color: Colors.black,
+          ),
+          child: Text(
+            'Fetched Users',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+            ),
+          ),
+        ),
+        for (var item in user_list)
+          ListTile(
+            leading: CircleAvatar(backgroundImage: NetworkImage(item?.avatar_url ?? 'none')),
+            title: Text(item?.login ?? 'id missing'),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ],
+        ),
+      ),
+          
     );
   }
 }
