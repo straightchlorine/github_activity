@@ -4,6 +4,7 @@ class User {
   final String name;
   final String login;
   final String avatar_url;
+  List<GitHubActivity> activities = [];
 
   User({
     required this.name,
@@ -17,5 +18,14 @@ class User {
       login: json['login'],
       avatar_url: json['avatar_url']
     );
+  }
+
+  void set activity(List<GitHubActivity> activities) {
+    this.activities = [];
+    this.activities.addAll(activities);
+  }
+
+  List<GitHubActivity> get activitiy {
+    return this.activities;
   }
 }
