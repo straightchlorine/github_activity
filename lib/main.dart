@@ -33,6 +33,13 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
     _activities = [];
   }
 
+  void appendUser(User? user, List<User?> users) {
+    for (var current_user in user_list)
+      if (current_user?.login == user?.login)
+        users.remove(current_user);
+        users.add(user);
+  }
+
   void _loadGitHubActivity() async {
     final username = _usernameController.text;
     if (username.isNotEmpty) {
@@ -42,7 +49,8 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
         setState(() {
           _activities = activities;
           _userData = userData;
-          user_list.add(userData);
+          appendUser(userData, user_list);
+          user_list.last?.activities = activities;
         });
       } catch (e) {
         print('Error: $e');
@@ -52,20 +60,15 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
     }
   }
 
-  void _loadSpecificGitHubActivity(String username) async {
-    if (username.isNotEmpty) {
-      try {
-        final activities = await _gitHubService.getGitHubActivity(username);
-        final userData = await _gitHubService.getGitHubUser(username);
-        setState(() {
-          _activities = activities;
-          _userData = userData;
-        });
-      } catch (e) {
-        print('Error: $e');
-      }
-    } else {
-      print('Please enter a GitHub username');
+  void _loadStoredActivity(User? user) async {
+    try {
+      setState(() {
+        _activities = user?.activities ?? [];
+        _userData = user;
+        _usernameController.text = user?.login ?? '';
+      });
+    } catch (e) {
+      print('Error: $e');
     }
   }
 
@@ -145,8 +148,8 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
             title: Text(item?.login ?? 'id missing'),
             subtitle: Text(item?.name ?? 'name missing'),
             onTap: () {
-              _loadSpecificGitHubActivity(item?.login ?? 'id missing');
-              //Navigator.pop(context);
+              _loadStoredActivity(item);
+              Navigator.pop(context);
             },
           ),
           ],
