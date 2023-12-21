@@ -52,6 +52,23 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
     }
   }
 
+  void _loadSpecificGitHubActivity(String username) async {
+    if (username.isNotEmpty) {
+      try {
+        final activities = await _gitHubService.getGitHubActivity(username);
+        final userData = await _gitHubService.getGitHubUser(username);
+        setState(() {
+          _activities = activities;
+          _userData = userData;
+        });
+      } catch (e) {
+        print('Error: $e');
+      }
+    } else {
+      print('Please enter a GitHub username');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,12 +139,14 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
             ),
           ),
         ),
-        for (var item in user_list)
+        for (var item in user_list.reversed.toList())
           ListTile(
             leading: CircleAvatar(backgroundImage: NetworkImage(item?.avatar_url ?? 'none')),
             title: Text(item?.login ?? 'id missing'),
+            subtitle: Text(item?.name ?? 'name missing'),
             onTap: () {
-              Navigator.pop(context);
+              _loadSpecificGitHubActivity(item?.login ?? 'id missing');
+              //Navigator.pop(context);
             },
           ),
           ],
