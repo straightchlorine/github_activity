@@ -3,9 +3,39 @@ import 'github_service.dart';
 import 'github_activity.dart';
 import 'user_object.dart';
 import 'globals.dart' as globals;
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(GitHubActivity());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AppState(),
+      child: GitHubActivity(),
+    )
+  );
+}
+
+class AppState extends ChangeNotifier {
+  bool _isDarkMode = false;
+  bool get isDarkMode => _isDarkMode;
+
+  void toggleTheme() {
+    _isDarkMode = !_isDarkMode;
+    notifyListeners();
+  }
+
+  void appendUser(User? user) {
+    for (var current_user in globals.fetched)
+      if (current_user?.login == user?.login)
+        globals.fetched.remove(current_user);
+        globals.fetched.add(user);
+    notifyListeners();
+  }
+
+  void loadStoredActivity(User? user) async {
+      globals.current_user = user;
+      notifyListeners();
+  }
+
 }
 
 class GitHubActivity extends StatefulWidget {
@@ -16,14 +46,22 @@ class _GitHubActivityState extends State<GitHubActivity> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GitHub Activity App',
-      theme: globals.isDarkMode ? ThemeData.dark() : ThemeData.light(),
-      home: Scaffold(
-        appBar: ApplicationControlBar(),
-        body: ActivityScreen(),
-        drawer: FetchedUsersDrawer(),
-      )
+    return ChangeNotifierProvider(
+      create: (context) => AppState(),
+      builder: (context, _) {
+        final appState = Provider.of<AppState>(context);
+        return MaterialApp(
+          title: 'GitHub Activity App',
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.dark(),
+          themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          home: Scaffold(
+            appBar: ApplicationControlBar(),
+            body: ActivityScreen(),
+            drawer: FetchedUsersDrawer(),
+          )
+        );
+      },
     );
   }
 }
@@ -39,9 +77,7 @@ class ApplicationControlBar extends StatefulWidget implements PreferredSizeWidge
 class _ApplicationControlBarState extends State<ApplicationControlBar> {
 
   void toggleTheme() {
-    setState(() {
-      globals.isDarkMode = !globals.isDarkMode;
-    });
+      Provider.of<AppState>(context, listen: false).toggleTheme();
   }
 
   @override
@@ -51,7 +87,7 @@ class _ApplicationControlBarState extends State<ApplicationControlBar> {
       actions: [
         IconButton(
           icon: Icon(Icons.brightness_4),
-          onPressed: toggleTheme,
+          onPressed: toggleTheme
         )
       ],
     );
@@ -68,25 +104,17 @@ class _ActivityScreenState extends State<ActivityScreen> {
   TextEditingController _usernameController = TextEditingController();
   final GitHubService _gitHubService = GitHubService();
 
-    void appendUser(User? user) {
-      for (var current_user in globals.fetched)
-        if (current_user?.login == user?.login)
-          globals.fetched.remove(current_user);
-          globals.fetched.add(user);
-    }
-
   void _loadGitHubActivity() async {
+    var appState = Provider.of<AppState>(context, listen: false);
+
     final username = _usernameController.text;
     if (username.isNotEmpty) {
       try {
         final user = await _gitHubService.getUser(username);
         final activities = await _gitHubService.getActivity(username);
-
-        setState(() {
-                  globals.current_user = user;
-                  globals.current_user!.activities = activities;
-                  appendUser(globals.current_user);
-                });
+        globals.current_user = user;
+        globals.current_user!.activities = activities;
+        appState.appendUser(globals.current_user);
       } catch (e) {
         print('Error: $e');
       }
@@ -156,14 +184,10 @@ class FetchedUsersDrawer extends StatefulWidget {
 
 class _FetchedUsersDrawerState extends State<FetchedUsersDrawer> {
 
-  void _loadStoredActivity(User? user) async {
-    setState(() {
-      globals.current_user = user;
-        });
-  }
-
   @override
   Widget build(BuildContext context) {
+    var appState = Provider.of<AppState>(context, listen: false);
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -186,7 +210,7 @@ class _FetchedUsersDrawerState extends State<FetchedUsersDrawer> {
               title: Text(item?.login ?? 'id missing'),
               subtitle: Text(item?.name ?? 'name missing'),
               onTap: () {
-                _loadStoredActivity(item);
+                appState.loadStoredActivity(item);
                 Navigator.pop(context);
               },
             ),
