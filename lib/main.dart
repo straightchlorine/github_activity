@@ -1,47 +1,11 @@
 import 'package:flutter/material.dart';
-import 'github_service.dart';
-import 'github_activity.dart';
-import 'user_object.dart';
 import 'package:provider/provider.dart';
 
+import 'package:github_activity/github_service.dart';
+import 'package:github_activity/state_provider.dart';
+
 void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppState(),
-      child: GitHubActivity(),
-    )
-  );
-}
-
-class AppState extends ChangeNotifier {
-  bool _isDarkMode = false;
-  bool get isDarkMode => _isDarkMode;
-
-  List<User?> _fetched = [];
-  List<User?> get fetched => _fetched;
-
-  User? _current_user;
-  User? get current_user => _current_user;
-  void set current_user(User? user) => _current_user = user;
-
-  void toggleTheme() {
-    _isDarkMode = !_isDarkMode;
-    notifyListeners();
-  }
-
-  void appendUser(User? user) {
-    for (var current_user in _fetched)
-      if (current_user?.login == user?.login)
-        _fetched.remove(current_user);
-        _fetched.add(user);
-    notifyListeners();
-  }
-
-  void loadStoredActivity(User? user) async {
-      _current_user = user;
-      notifyListeners();
-  }
-
+  runApp(GitHubActivity());
 }
 
 class GitHubActivity extends StatefulWidget {
@@ -57,7 +21,7 @@ class _GitHubActivityState extends State<GitHubActivity> {
       builder: (context, _) {
         final appState = Provider.of<AppState>(context);
         return MaterialApp(
-          title: 'GitHub Activity App',
+          title: 'GitHub Activity',
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
           themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
