@@ -6,18 +6,18 @@ import 'user_object.dart';
 class GitHubService {
   final String _baseUrl = 'https://api.github.com';
 
-  Future<List<GitHubActivity>> getGitHubActivity(String username) async {
+  Future<List<Activity>> getActivity(String username) async {
     final response = await http.get(Uri.parse('$_baseUrl/users/$username/events'));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
-      return data.map((json) => GitHubActivity.fromJson(json)).toList();
+      return data.map((json) => Activity.fromJson(json)).toList();
     } else {
       throw Exception('Failed to fetch GitHub activity');
     }
   }
 
-  Future<User> getGitHubUser(String username) async {
+  Future<User> getUser(String username) async {
     final response = await http.get(Uri.parse('$_baseUrl/users/$username'));
 
     if (response.statusCode == 200) {

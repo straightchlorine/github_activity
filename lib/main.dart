@@ -2,56 +2,91 @@ import 'package:flutter/material.dart';
 import 'github_service.dart';
 import 'github_activity.dart';
 import 'user_object.dart';
+import 'globals.dart' as globals;
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(GitHubActivity());
+}
 
-class MyApp extends StatelessWidget {
+class GitHubActivity extends StatefulWidget {
+  _GitHubActivityState createState() => _GitHubActivityState();
+}
+
+class _GitHubActivityState extends State<GitHubActivity> {
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GitHub Activity App',
-      home: GitHubActivityScreen(),
+      theme: globals.isDarkMode ? ThemeData.dark() : ThemeData.light(),
+      home: Scaffold(
+        appBar: ApplicationControlBar(),
+        body: ActivityScreen(),
+        drawer: FetchedUsersDrawer(),
+      )
     );
   }
 }
 
-class GitHubActivityScreen extends StatefulWidget {
+class ApplicationControlBar extends StatefulWidget implements PreferredSizeWidget {
   @override
-  _GitHubActivityScreenState createState() => _GitHubActivityScreenState();
+  _ApplicationControlBarState createState() => _ApplicationControlBarState();
+
+    @override
+    Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
-  final GitHubService _gitHubService = GitHubService();
-  late List<GitHubActivity> _activities;
-  User? _userData;
-  List<User?> user_list = [];
-  TextEditingController _usernameController = TextEditingController();
+class _ApplicationControlBarState extends State<ApplicationControlBar> {
+
+  void toggleTheme() {
+    setState(() {
+      globals.isDarkMode = !globals.isDarkMode;
+    });
+  }
 
   @override
-  void initState() {
-    super.initState();
-    _activities = [];
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text('GitHub Activity'),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.brightness_4),
+          onPressed: toggleTheme,
+        )
+      ],
+    );
   }
+}
 
-  void appendUser(User? user, List<User?> users) {
-    for (var current_user in user_list)
-      if (current_user?.login == user?.login)
-        users.remove(current_user);
-        users.add(user);
-  }
+class ActivityScreen extends StatefulWidget {
+  @override
+  _ActivityScreenState createState() => _ActivityScreenState();
+}
+
+class _ActivityScreenState extends State<ActivityScreen> {
+
+  TextEditingController _usernameController = TextEditingController();
+  final GitHubService _gitHubService = GitHubService();
+
+    void appendUser(User? user) {
+      for (var current_user in globals.fetched)
+        if (current_user?.login == user?.login)
+          globals.fetched.remove(current_user);
+          globals.fetched.add(user);
+    }
 
   void _loadGitHubActivity() async {
     final username = _usernameController.text;
     if (username.isNotEmpty) {
       try {
-        final activities = await _gitHubService.getGitHubActivity(username);
-        final userData = await _gitHubService.getGitHubUser(username);
+        final user = await _gitHubService.getUser(username);
+        final activities = await _gitHubService.getActivity(username);
+
         setState(() {
-          _activities = activities;
-          _userData = userData;
-          appendUser(userData, user_list);
-          user_list.last?.activities = activities;
-        });
+                  globals.current_user = user;
+                  globals.current_user!.activities = activities;
+                  appendUser(globals.current_user);
+                });
       } catch (e) {
         print('Error: $e');
       }
@@ -60,102 +95,103 @@ class _GitHubActivityScreenState extends State<GitHubActivityScreen> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              if (globals.current_user != null)
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: NetworkImage(globals.current_user?.avatar_url ?? 'url missing'),
+                ),
+                SizedBox(height: 10),
+              if (globals.current_user != null)
+                Text(
+                  globals.current_user?.name ?? globals.current_user?.login ?? 'id missing',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 20),
+              TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(labelText: 'GitHub Username'),
+              ),
+              Padding(padding: EdgeInsets.only(top: 20),
+                child: ElevatedButton(
+                  onPressed: _loadGitHubActivity,
+                  child: Text('Fetch GitHub Activity'),
+                ),
+              )
+            ],
+          ),
+        ),
+        Expanded(
+          child: globals.current_user?.activities == null ? 
+            Center(
+              child: Text('No GitHub activity fetched to display')
+            ) : ListView.builder(
+            itemCount: globals.current_user?.activities.length,
+            itemBuilder: (context, index) {
+              final activity = globals.current_user!.activities[index];
+              return ListTile(
+                title: Text(activity.type),
+                subtitle: Text('${activity.actorLogin} - ${activity.repoName}'),
+                trailing: Text(activity.createdAt.toString()),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class FetchedUsersDrawer extends StatefulWidget {
+  @override
+  _FetchedUsersDrawerState createState() => _FetchedUsersDrawerState();
+}
+
+class _FetchedUsersDrawerState extends State<FetchedUsersDrawer> {
+
   void _loadStoredActivity(User? user) async {
-    try {
-      setState(() {
-        _activities = user?.activities ?? [];
-        _userData = user;
-        _usernameController.text = user?.login ?? '';
-      });
-    } catch (e) {
-      print('Error: $e');
-    }
+    setState(() {
+      globals.current_user = user;
+        });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('GitHub Activity'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                if (_userData != null)
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: NetworkImage(_userData?.avatar_url ?? 'url missing'),
-                ),
-                SizedBox(height: 10),
-                if (_userData != null)
-                Text(
-                  _userData?.name ?? _userData?.login ?? 'id missing',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 20),
-                TextField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(labelText: 'GitHub Username'),
-                ),
-                Padding(padding: EdgeInsets.only(top: 20),
-                  child: ElevatedButton(
-                    onPressed: _loadGitHubActivity,
-                    child: Text('Fetch GitHub Activity'),
-                  ),
-                )
-              ],
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: Colors.black,
+            ),
+            child: Text(
+              'Fetched Users',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+              ),
             ),
           ),
-                Expanded(
-                  child: _activities.isEmpty
-                  ? Center(child: Text('No GitHub activity to display'))
-                  : ListView.builder(
-                    itemCount: _activities.length,
-                    itemBuilder: (context, index) {
-                      final activity = _activities[index];
-                      return ListTile(
-                        title: Text(activity.type),
-                        subtitle: Text('${activity.actorLogin} - ${activity.repoName}'),
-                        trailing: Text(activity.createdAt.toString()),
-                      );
-                    },
+          for (var item in globals.fetched.reversed.toList())
+            ListTile(
+              leading: CircleAvatar(backgroundImage: NetworkImage(item?.avatar_url ?? 'none')),
+              title: Text(item?.login ?? 'id missing'),
+              subtitle: Text(item?.name ?? 'name missing'),
+              onTap: () {
+                _loadStoredActivity(item);
+                Navigator.pop(context);
+              },
             ),
-          ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-        DrawerHeader(
-          decoration: const BoxDecoration(
-            color: Colors.black,
-          ),
-          child: Text(
-            'Fetched Users',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-            ),
-          ),
-        ),
-        for (var item in user_list.reversed.toList())
-          ListTile(
-            leading: CircleAvatar(backgroundImage: NetworkImage(item?.avatar_url ?? 'none')),
-            title: Text(item?.login ?? 'id missing'),
-            subtitle: Text(item?.name ?? 'name missing'),
-            onTap: () {
-              _loadStoredActivity(item);
-              Navigator.pop(context);
-            },
-          ),
-          ],
-        ),
-      ),
-          
     );
   }
 }
