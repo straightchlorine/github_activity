@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'github_service.dart';
 import 'github_activity.dart';
 import 'user_object.dart';
-import 'globals.dart' as globals;
 import 'package:provider/provider.dart';
 
 void main() {
@@ -18,21 +17,28 @@ class AppState extends ChangeNotifier {
   bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
 
+  List<User?> _fetched = [];
+  List<User?> get fetched => _fetched;
+
+  User? _current_user;
+  User? get current_user => _current_user;
+  void set current_user(User? user) => _current_user = user;
+
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;
     notifyListeners();
   }
 
   void appendUser(User? user) {
-    for (var current_user in globals.fetched)
+    for (var current_user in _fetched)
       if (current_user?.login == user?.login)
-        globals.fetched.remove(current_user);
-        globals.fetched.add(user);
+        _fetched.remove(current_user);
+        _fetched.add(user);
     notifyListeners();
   }
 
   void loadStoredActivity(User? user) async {
-      globals.current_user = user;
+      _current_user = user;
       notifyListeners();
   }
 
@@ -112,9 +118,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
       try {
         final user = await _gitHubService.getUser(username);
         final activities = await _gitHubService.getActivity(username);
-        globals.current_user = user;
-        globals.current_user!.activities = activities;
-        appState.appendUser(globals.current_user);
+        appState.current_user = user;
+        appState.current_user!.activities = activities;
+        appState.appendUser(appState.current_user);
       } catch (e) {
         print('Error: $e');
       }
@@ -125,21 +131,23 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var appState = Provider.of<AppState>(context, listen: false);
+
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             children: [
-              if (globals.current_user != null)
+              if (appState.current_user != null)
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: NetworkImage(globals.current_user?.avatar_url ?? 'url missing'),
+                  backgroundImage: NetworkImage(appState.current_user?.avatar_url ?? 'url missing'),
                 ),
                 SizedBox(height: 10),
-              if (globals.current_user != null)
+              if (appState.current_user != null)
                 Text(
-                  globals.current_user?.name ?? globals.current_user?.login ?? 'id missing',
+                  appState.current_user?.name ?? appState.current_user?.login ?? 'id missing',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 20),
@@ -157,13 +165,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
           ),
         ),
         Expanded(
-          child: globals.current_user?.activities == null ? 
+          child: appState.current_user?.activities == null ? 
             Center(
               child: Text('No GitHub activity fetched to display')
             ) : ListView.builder(
-            itemCount: globals.current_user?.activities.length,
+            itemCount: appState.current_user?.activities.length,
             itemBuilder: (context, index) {
-              final activity = globals.current_user!.activities[index];
+              final activity = appState.current_user!.activities[index];
               return ListTile(
                 title: Text(activity.type),
                 subtitle: Text('${activity.actorLogin} - ${activity.repoName}'),
@@ -204,7 +212,7 @@ class _FetchedUsersDrawerState extends State<FetchedUsersDrawer> {
               ),
             ),
           ),
-          for (var item in globals.fetched.reversed.toList())
+          for (var item in appState.fetched.reversed.toList())
             ListTile(
               leading: CircleAvatar(backgroundImage: NetworkImage(item?.avatar_url ?? 'none')),
               title: Text(item?.login ?? 'id missing'),
