@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:github_activity/github_activity.dart';
+import 'package:github_activity/user_object.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:provider/provider.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:github_activity/github_service.dart';
 import 'package:github_activity/state_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  Hive.registerAdapter(UserAdapter());
+  Hive.registerAdapter(ActivityAdapter());
   runApp(GitHubActivity());
 }
 
@@ -40,14 +52,31 @@ class ApplicationControlBar extends StatefulWidget implements PreferredSizeWidge
   @override
   _ApplicationControlBarState createState() => _ApplicationControlBarState();
 
-    @override
-    Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
 class _ApplicationControlBarState extends State<ApplicationControlBar> {
 
+  var _prefs;
+
+  _fetchPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    Provider.of<AppState>(context, listen: false).isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    Provider.of<AppState>(context, listen: false).loadFetched();
+    Provider.of<AppState>(context, listen: false).loadCurrent();
+    _prefs = prefs;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    Provider.of<AppState>(context, listen: false).loadFetched();
+    _fetchPrefs();
+  }
+
   void toggleTheme() {
-      Provider.of<AppState>(context, listen: false).toggleTheme();
+      Provider.of<AppState>(context, listen: false).toggleTheme(_prefs);
   }
 
   @override

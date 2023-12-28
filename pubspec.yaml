@@ -9,3 +9,9 @@ dependencies:
   provider: ^6.1.1
   hive: ^2.0.4
   hive_flutter: ^1.1.0
+  isar_flutter_libs: ^4.0.0-dev.13
+  path_provider: ^2.1.0
+  shared_preferences:
+dev_dependencies:
+  hive_generator:
+  build_runner: ^2.4.7

@@ -27,16 +27,48 @@ class AppState extends ChangeNotifier {
       if (current_user?.login == user?.login)
         _fetched.remove(current_user);
         _fetched.add(user);
-    
+    saveFetched();
     notifyListeners();
   }
 
   void loadStoredActivity(User? user) async {
     _current_user = user;
+    saveCurrent();
     notifyListeners();
   }
 
   void set isDarkMode(bool pref) {
     _isDarkMode = pref;
   }
+
+  Future<void> saveFetched() async {
+    var box = await Hive.openBox('fetched');
+    await box.clear();
+    await box.addAll(_fetched);
+    notifyListeners();
+  }
+
+  Future<void> saveCurrent() async {
+    var box = await Hive.openBox('current');
+    await box.put('current', current_user?.login ?? 'null');
+    notifyListeners();
+  }
+
+  Future<void> loadFetched() async {
+    var box = await Hive.openBox('fetched');
+    _fetched.clear();
+    _fetched.addAll(box.values.cast<User?>().toList());
+    notifyListeners();
+  }
+
+  Future<void> loadCurrent() async {
+    var box = await Hive.openBox('current');
+    var current = box.get('current');
+
+    for(var user in _fetched)
+      if(user?.login == current)
+      _current_user = user;
+    notifyListeners();
+  }
 }
+

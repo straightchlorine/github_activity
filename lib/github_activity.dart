@@ -1,7 +1,20 @@
+import 'package:hive/hive.dart';
+
+part 'github_activity.g.dart';
+
+@HiveType(typeId: 1)
 class Activity {
+
+  @HiveField(0)
   final String type;
+
+  @HiveField(1)
   final String repoName;
+
+  @HiveField(2)
   final String actorLogin;
+
+  @HiveField(3)
   final DateTime createdAt;
 
   Activity({

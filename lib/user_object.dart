@@ -1,9 +1,22 @@
 import 'package:github_activity/github_activity.dart';
 
-class User {
+import 'package:hive/hive.dart';
+
+part 'user_object.g.dart';
+
+@HiveType(typeId: 0)
+class User extends HiveObject {
+ 
+  @HiveField(0)
   final String name;
+
+  @HiveField(1)
   final String login;
+
+  @HiveField(2)
   final String avatar_url;
+
+  @HiveField(3)
   List<Activity> user_activities = [];
 
   User({
