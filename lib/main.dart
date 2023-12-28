@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:github_activity/github_activity.dart';
 import 'package:github_activity/user_object.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:provider/provider.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:github_activity/github_service.dart';
@@ -122,6 +120,19 @@ class _ActivityScreenState extends State<ActivityScreen> {
     }
   }
 
+  Future<void> _refreshGitHubActivity() async {
+    var appState = Provider.of<AppState>(context, listen: false);
+
+    try {
+      final activities = await _gitHubService.getActivity(appState.current_user?.login ?? 'null');
+      appState.current_user!.activities = activities;
+      appState.appendUser(appState.current_user);
+    } catch (e) {
+      print('Error: $e');
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = Provider.of<AppState>(context, listen: false);
@@ -158,21 +169,23 @@ class _ActivityScreenState extends State<ActivityScreen> {
           ),
         ),
         Expanded(
-          child: appState.current_user?.activities == null ? 
-            Center(
-              child: Text('No GitHub activity fetched to display')
-            ) : ListView.builder(
-            itemCount: appState.current_user?.activities.length,
-            itemBuilder: (context, index) {
-              final activity = appState.current_user!.activities[index];
-              return ListTile(
-                title: Text(activity.type),
-                subtitle: Text('${activity.actorLogin} - ${activity.repoName}'),
-                trailing: Text(activity.createdAt.toString()),
-              );
-            },
-          ),
-        ),
+          child: RefreshIndicator(
+            onRefresh: _refreshGitHubActivity,
+            child: appState.current_user?.activities == null ? 
+              Center(child: Text('No GitHub activity fetched to display')) : 
+                ListView.builder(
+                  itemCount: appState.current_user?.activities.length,
+                  itemBuilder: (context, index) {
+                    final activity = appState.current_user!.activities[index];
+                    return ListTile(
+                      title: Text(activity.type),
+                      subtitle: Text('${activity.actorLogin} - ${activity.repoName}'),
+                      trailing: Text(activity.createdAt.toString()),
+                    );
+                },
+              ),
+            ),
+        )
       ],
     );
   }
