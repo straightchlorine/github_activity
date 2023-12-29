@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
 import 'package:github_activity/user_object.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AppState extends ChangeNotifier {
 
@@ -23,10 +22,18 @@ class AppState extends ChangeNotifier {
   }
 
   void appendUser(User? user) {
-    for (var current_user in _fetched)
-      if (current_user?.login == user?.login)
-        _fetched.remove(current_user);
+      bool replaced = false;
+      for (var current_user in _fetched) {
+        if (current_user?.login == user?.login) {
+          _fetched.add(user);
+          _fetched.remove(current_user);
+          replaced = true;
+        }
+      }
+
+      if(!replaced)
         _fetched.add(user);
+
     saveFetched();
     notifyListeners();
   }
