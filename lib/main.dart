@@ -253,12 +253,16 @@ class _FetchedUsersDrawerState extends State<FetchedUsersDrawer> {
         children: <Widget>[
           DrawerHeader(
             decoration: const BoxDecoration(),
-            child: Text(
-              'Fetched Users',
-              style: TextStyle(
-                fontSize: 24,
+            child: ListTile (
+              title: Text('Fetched Users', style: TextStyle(fontSize: 24)),
+              trailing: IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () {
+                  appState.clearFetched();
+                  Navigator.pop(context);
+                },
               ),
-            ),
+            )
           ),
           for (var item in appState.fetched.reversed.toList())
             ListTile(
