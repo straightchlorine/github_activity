@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
 import 'package:github_activity/github_activity.dart';
 import 'package:github_activity/user_object.dart';
 
@@ -83,7 +85,7 @@ class _ApplicationControlBarState extends State<ApplicationControlBar> {
       title: Text('GitHub Activity'),
       actions: [
         IconButton(
-          icon: Icon(Icons.brightness_4),
+          icon: Provider.of<AppState>(context, listen:false).isDarkMode == true ? Icon(Icons.light_mode) : Icon(Icons.dark_mode),
           onPressed: toggleTheme
         )
       ],
@@ -207,13 +209,10 @@ class _FetchedUsersDrawerState extends State<FetchedUsersDrawer> {
         padding: EdgeInsets.zero,
         children: <Widget>[
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Colors.black,
-            ),
+            decoration: const BoxDecoration(),
             child: Text(
               'Fetched Users',
               style: TextStyle(
-                color: Colors.white,
                 fontSize: 24,
               ),
             ),
