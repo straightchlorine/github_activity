@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import 'package:github_activity/github_activity.dart';
 import 'package:github_activity/user_object.dart';
@@ -37,10 +36,13 @@ class _GitHubActivityState extends State<GitHubActivity> {
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
           themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          home: Scaffold(
-            appBar: ApplicationControlBar(),
-            body: ActivityScreen(),
-            drawer: FetchedUsersDrawer(),
+          home: GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: Scaffold(
+              appBar: ApplicationControlBar(),
+              body: ActivityScreen(),
+              drawer: FetchedUsersDrawer(),
+            )
           )
         );
       },
@@ -113,11 +115,15 @@ class _ActivityScreenState extends State<ActivityScreen> {
         final activities = await _gitHubService.getActivity(username);
         appState.current_user = user;
         appState.current_user!.activities = activities;
-        appState.appendUser(appState.current_user);
+        appState.appendUser(user);
+        _usernameController.text = '';
+        FocusManager.instance.primaryFocus?.unfocus();
       } catch (e) {
+        _showUnsuccessfulFetchAlert();
         print('Error: $e');
       }
     } else {
+      _showUsernameAlert();
       print('Please enter a GitHub username');
     }
   }
@@ -130,9 +136,45 @@ class _ActivityScreenState extends State<ActivityScreen> {
       appState.current_user!.activities = activities;
       appState.appendUser(appState.current_user);
     } catch (e) {
+      _showUnsuccessfulFetchAlert();
       print('Error: $e');
     }
+  }
 
+  void _showUsernameAlert() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('GitHub Activity'),
+          content: const Text('Please enter a GitHub username to fetch activity.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'OK'),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showUnsuccessfulFetchAlert() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('GitHub Activity'),
+          content: const Text('Failed to fetch GitHub activity for this user. Please check if the username is correct or try again later.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'OK'),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -158,6 +200,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 ),
                 SizedBox(height: 20),
               TextField(
+                autofocus: false,
                 controller: _usernameController,
                 decoration: InputDecoration(labelText: 'GitHub Username'),
               ),
