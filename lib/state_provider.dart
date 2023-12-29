@@ -44,6 +44,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearFetched() {
+    _fetched.clear();
+    current_user = null;
+    saveFetched();
+    notifyListeners();
+  }
+
   void set isDarkMode(bool pref) {
     _isDarkMode = pref;
   }
@@ -78,4 +85,3 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 }
-
