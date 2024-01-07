@@ -247,35 +247,44 @@ class _FetchedUsersDrawerState extends State<FetchedUsersDrawer> {
   Widget build(BuildContext context) {
     var appState = Provider.of<AppState>(context, listen: false);
 
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          DrawerHeader(
-            decoration: const BoxDecoration(),
-            child: ListTile (
-              title: Text('Fetched Users', style: TextStyle(fontSize: 24)),
-              trailing: IconButton(
-                icon: Icon(Icons.delete),
-                onPressed: () {
-                  appState.clearFetched();
-                  Navigator.pop(context);
+      return Drawer(
+        child: Column(
+          children: <Widget>[
+            DrawerHeader(
+              decoration: const BoxDecoration(),
+              child: ListTile(
+                title: Text('Fetched Users', style: TextStyle(fontSize: 24)),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () {
+                    appState.clearFetched();
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: appState.fetched.length,
+                itemBuilder: (BuildContext context, int index) {
+                  var item = appState.fetched.reversed.toList()[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(item?.avatar_url ?? 'none'),
+                    ),
+                    title: Text(item?.login ?? 'id missing'),
+                    subtitle: Text(item?.name ?? 'name missing'),
+                    onTap: () {
+                      appState.loadStoredActivity(item);
+                      Navigator.pop(context);
+                    },
+                  );
                 },
               ),
-            )
-          ),
-          for (var item in appState.fetched.reversed.toList())
-            ListTile(
-              leading: CircleAvatar(backgroundImage: NetworkImage(item?.avatar_url ?? 'none')),
-              title: Text(item?.login ?? 'id missing'),
-              subtitle: Text(item?.name ?? 'name missing'),
-              onTap: () {
-                appState.loadStoredActivity(item);
-                Navigator.pop(context);
-              },
             ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 }
