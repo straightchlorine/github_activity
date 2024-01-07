@@ -10,6 +10,11 @@
 .svn/
 migrate_working_dir/
 
+# generated files
+/linux/flutter/generated_plugin*
+/macos/Flutter/GeneratedPluginRegistrant.swift
+/windows/flutter/generated_plugin*
+
 # IntelliJ related
 *.iml
 *.ipr

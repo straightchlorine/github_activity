@@ -1,7 +1,7 @@
 name: github_activity
 flutter:
   uses-material-design: true
-description: Github activity tracker for mobile.
+description: GitHub activity tracker for mobile.
 environment:
   sdk: '^3.1.0'
 dependencies:
